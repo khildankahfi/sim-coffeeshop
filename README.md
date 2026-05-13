@@ -1,59 +1,238 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ☕ SIM Coffeeshop
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem Informasi Manajemen Coffeeshop berbasis web — dibangun dengan Laravel 11, Vite, dan vanilla CSS tanpa framework UI eksternal.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Fitur
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 👑 Admin
+| Fitur | Deskripsi |
+|---|---|
+| **Dashboard** | Statistik harian, grafik pendapatan 7 hari, transaksi terbaru, stok menipis |
+| **Kasir / POS** | Point of Sale dengan keranjang interaktif, quick amount, dan kalkulasi kembalian otomatis |
+| **Riwayat Transaksi** | Lihat semua transaksi dengan filter tanggal dan detail nota |
+| **Produk / Menu** | CRUD produk lengkap dengan upload foto, stok, status aktif/nonaktif |
+| **Kategori** | Kelola kategori menu |
+| **Laporan** | Laporan pendapatan dengan filter periode (hari ini, minggu, bulan, custom), produk terlaris, tren grafik |
+| **Manajemen Karyawan** | CRUD akun admin dan kasir |
+| **Profil** | Update nama, email, password |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 💳 Kasir
+| Fitur | Deskripsi |
+|---|---|
+| **Kasir / POS** | Akses penuh ke fitur transaksi |
+| **Riwayat** | Hanya melihat transaksi milik sendiri |
+| **Profil** | Update data pribadi |
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Tech Stack
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Layer | Teknologi |
+|---|---|
+| Backend | Laravel 11 |
+| Frontend | Blade Templates + Vite |
+| Styling | Custom CSS (tanpa Tailwind/Bootstrap) |
+| Database | MySQL |
+| Auth | Laravel Breeze (dikustomisasi) |
+| Chart | Chart.js 4.4 |
+| JS | Alpine.js + Axios |
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Struktur Database
 
-### Premium Partners
+```
+users           — akun admin & kasir (role: admin/kasir)
+categories      — kategori menu (kopi, non-kopi, makanan, dll.)
+products        — produk/menu dengan stok, harga, foto
+orders          — header transaksi (invoice, total, kembalian, status)
+order_items     — detail item per transaksi (snapshot nama & harga)
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Relasi
+```
+User       ──< Order         (satu kasir bisa buat banyak order)
+Order      ──< OrderItem     (satu order punya banyak item)
+OrderItem  >── Product       (setiap item merujuk ke satu produk)
+Product    >── Category      (setiap produk masuk satu kategori)
+```
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Instalasi
 
-## Code of Conduct
+### Prasyarat
+- PHP >= 8.2
+- Composer
+- Node.js >= 18
+- MySQL
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Langkah Setup
 
-## Security Vulnerabilities
+**1. Clone & install dependency**
+```bash
+git clone <repo-url>
+cd sim-coffeeshop
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+composer install
+npm install
+```
 
-## License
+**2. Konfigurasi environment**
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Edit `.env`:
+```env
+APP_NAME="SIM Coffeeshop"
+APP_URL=http://127.0.0.1:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=sim_coffeeshop
+DB_USERNAME=root
+DB_PASSWORD=
+
+SESSION_DRIVER=file
+SESSION_DOMAIN=
+SESSION_SECURE_COOKIE=false
+```
+
+> ⚠️ Pastikan `APP_URL` sama persis dengan URL yang diakses di browser. Kalau buka di `127.0.0.1:8000` jangan isi `localhost`, begitu sebaliknya.
+
+**3. Buat database & jalankan migrasi**
+```bash
+php artisan migrate
+php artisan db:seed        # (opsional) isi data dummy
+php artisan storage:link   # untuk foto produk
+```
+
+**4. Jalankan server**
+```bash
+# Terminal 1 — Laravel
+php artisan serve
+
+# Terminal 2 — Vite (asset bundler)
+npm run dev
+```
+
+Buka browser: `http://127.0.0.1:8000`
+
+---
+
+## Akun Default
+
+Setelah seeder dijalankan:
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@coffeeshop.com | password |
+| Kasir | kasir@coffeeshop.com | password |
+
+> Ganti password setelah login pertama melalui halaman **Profil**.
+
+---
+
+## Struktur Direktori Utama
+
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── DashboardController.php
+│   │   ├── OrderController.php       # POS & riwayat transaksi
+│   │   ├── ProductController.php     # CRUD produk + upload foto
+│   │   ├── CategoryController.php
+│   │   ├── ReportController.php      # Laporan dengan filter periode
+│   │   ├── UserController.php        # Manajemen karyawan
+│   │   └── ProfileController.php
+│   ├── Middleware/
+│   │   └── RoleMiddleware.php        # Proteksi route by role
+│   └── Requests/                     # Form Request Validation
+├── Models/
+│   ├── Order.php                     # Auto-generate invoice number
+│   ├── OrderItem.php                 # Snapshot harga saat transaksi
+│   ├── Product.php                   # Accessor: formatted_price, image_url
+│   ├── Category.php
+│   └── User.php                      # isAdmin() / isKasir() helper
+
+resources/
+├── css/app.css                       # Design system lengkap (1300+ baris)
+├── js/app.js                         # Alpine.js + Axios
+└── views/
+    ├── layouts/
+    │   ├── app.blade.php             # Layout utama (sidebar + topbar)
+    │   └── guest.blade.php           # Layout halaman auth (split panel)
+    ├── dashboard/index.blade.php
+    ├── orders/
+    │   ├── create.blade.php          # Kasir / POS
+    │   ├── index.blade.php           # Riwayat transaksi
+    │   └── show.blade.php            # Detail nota
+    ├── products/                     # CRUD produk
+    ├── categories/                   # CRUD kategori
+    ├── reports/index.blade.php       # Laporan penjualan
+    ├── users/                        # Manajemen karyawan
+    └── profile/                      # Edit profil & password
+```
+
+---
+
+## Role & Middleware
+
+Route diproteksi menggunakan `RoleMiddleware`:
+
+```php
+// Hanya admin
+Route::middleware('role:admin')->group(function () {
+    Route::resource('products', ProductController::class);
+    Route::resource('categories', CategoryController::class);
+    Route::resource('users', UserController::class);
+    Route::resource('reports', ReportController::class);
+});
+
+// Admin dan kasir
+Route::middleware('role:admin,kasir')->group(function () {
+    Route::resource('orders', OrderController::class);
+    Route::get('dashboard', DashboardController::class);
+});
+```
+
+---
+
+## Alur Transaksi (POS)
+
+```
+Kasir buka /orders/create
+    → Pilih produk → masuk keranjang
+    → Input uang diterima → kembalian otomatis terhitung
+    → Klik "Proses Pembayaran"
+        → DB::transaction():
+            ✓ Validasi stok tiap produk
+            ✓ Kurangi stok produk
+            ✓ Buat Order (generate invoice INV-YYYYMMDD-XXX)
+            ✓ Buat OrderItem[] (snapshot nama & harga saat itu)
+    → Redirect ke /orders/{id} (nota)
+```
+
+> Menggunakan `DB::transaction()` — jika satu langkah gagal, semua rollback otomatis.
+
+---
+
+## Nomor Invoice
+
+Format: `INV-YYYYMMDD-XXX`
+
+Contoh: `INV-20250512-001`, `INV-20250512-002`, ...
+
+Reset setiap hari. Logic ada di `Order::generateInvoiceNumber()`.
+
+---
+
+## Lisensi
+
+Proyek ini dibuat untuk keperluan akademik — Tugas Akhir / Skripsi Manajemen Informatika.
