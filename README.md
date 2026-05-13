@@ -4,6 +4,22 @@ Sistem Informasi Manajemen Coffeeshop berbasis web — dibangun dengan Laravel 1
 
 ---
 
+## Mata Kuliah
+
+Sistem Informasi Manajemen
+
+---
+
+## Anggota Kelompok
+
+1. Berliana Nidia Meiningrum — 24091397142
+2. Arif Feredais Prakoso — 24091397146
+3. Anindya Calista Raniah — 24091397157
+4. Khildan Ash Kahfi — 24091397159
+5. M Kaysa Handoko Putra — 24091397170
+
+---
+
 ## Fitur
 
 ### 👑 Admin
@@ -182,57 +198,6 @@ resources/
 
 ---
 
-## Role & Middleware
-
-Route diproteksi menggunakan `RoleMiddleware`:
-
-```php
-// Hanya admin
-Route::middleware('role:admin')->group(function () {
-    Route::resource('products', ProductController::class);
-    Route::resource('categories', CategoryController::class);
-    Route::resource('users', UserController::class);
-    Route::resource('reports', ReportController::class);
-});
-
-// Admin dan kasir
-Route::middleware('role:admin,kasir')->group(function () {
-    Route::resource('orders', OrderController::class);
-    Route::get('dashboard', DashboardController::class);
-});
-```
-
----
-
-## Alur Transaksi (POS)
-
-```
-Kasir buka /orders/create
-    → Pilih produk → masuk keranjang
-    → Input uang diterima → kembalian otomatis terhitung
-    → Klik "Proses Pembayaran"
-        → DB::transaction():
-            ✓ Validasi stok tiap produk
-            ✓ Kurangi stok produk
-            ✓ Buat Order (generate invoice INV-YYYYMMDD-XXX)
-            ✓ Buat OrderItem[] (snapshot nama & harga saat itu)
-    → Redirect ke /orders/{id} (nota)
-```
-
-> Menggunakan `DB::transaction()` — jika satu langkah gagal, semua rollback otomatis.
-
----
-
-## Nomor Invoice
-
-Format: `INV-YYYYMMDD-XXX`
-
-Contoh: `INV-20250512-001`, `INV-20250512-002`, ...
-
-Reset setiap hari. Logic ada di `Order::generateInvoiceNumber()`.
-
----
-
 ## Lisensi
 
-Proyek ini dibuat untuk keperluan akademik — Tugas Akhir / Skripsi Manajemen Informatika.
+Proyek ini dibuat untuk keperluan final project — D4 Manajemen Informatika.
