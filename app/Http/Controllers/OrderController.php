@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -20,14 +21,17 @@ class OrderController extends Controller
     {
         $query = Order::with('user')->latest();
 
-        // Kasir hanya melihat transaksi miliknya sendiri
         if (auth()->user()->isKasir()) {
             $query->where('user_id', auth()->id());
         }
 
-        // Filter berdasarkan tanggal
         if (request('date')) {
             $query->whereDate('created_at', request('date'));
+        }
+
+        // Filter status
+        if (request('status')) {
+            $query->where('status', request('status'));
         }
 
         $orders = $query->paginate(15)->withQueryString();
@@ -36,8 +40,47 @@ class OrderController extends Controller
     }
 
     /**
-     * Tampilkan halaman kasir (POS - Point of Sale).
-     * Menampilkan semua produk aktif yang masih ada stoknya.
+     * ── CEK STOK REAL-TIME (AJAX) ───────────────────────────────────────
+     * Dipanggil oleh POS sebelum submit order via fetch().
+     * Memvalidasi apakah stok tiap produk masih cukup untuk qty yang dipesan.
+     *
+     * Request body: { items: [{ product_id, quantity }] }
+     * Response:
+     *   { ok: true }  → semua stok cukup, lanjut submit
+     *   { ok: false, errors: [{ product_id, name, requested, available }] }
+     */
+    public function checkStock(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'items'              => ['required', 'array'],
+            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.quantity'   => ['required', 'integer', 'min:1'],
+        ]);
+
+        $errors = [];
+
+        foreach ($request->items as $item) {
+            $product = Product::find($item['product_id']);
+
+            if (!$product || $product->stock < $item['quantity']) {
+                $errors[] = [
+                    'product_id' => $item['product_id'],
+                    'name'       => $product?->name ?? 'Produk tidak ditemukan',
+                    'requested'  => $item['quantity'],
+                    'available'  => $product?->stock ?? 0,
+                ];
+            }
+        }
+
+        if (!empty($errors)) {
+            return response()->json(['ok' => false, 'errors' => $errors], 422);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Tampilkan halaman kasir (POS).
      */
     public function create(): View
     {
@@ -52,7 +95,7 @@ class OrderController extends Controller
 
     /**
      * Proses dan simpan transaksi baru.
-     * Menggunakan DB::transaction() agar semua operasi atomik (semua berhasil atau semua dibatalkan).
+     * Menggunakan DB::transaction() agar atomik.
      */
     public function store(StoreOrderRequest $request): RedirectResponse
     {
@@ -62,11 +105,9 @@ class OrderController extends Controller
             $totalAmount = 0;
             $orderItems  = [];
 
-            // ── Hitung total & siapkan data item ──────────
             foreach ($validated['items'] as $item) {
                 $product = Product::findOrFail($item['product_id']);
 
-                // Validasi stok masih cukup
                 if ($product->stock < $item['quantity']) {
                     throw new \Exception("Stok {$product->name} tidak mencukupi! Stok tersedia: {$product->stock}");
                 }
@@ -76,17 +117,15 @@ class OrderController extends Controller
 
                 $orderItems[] = [
                     'product_id'   => $product->id,
-                    'product_name' => $product->name,   // Snapshot
-                    'price'        => $product->price,   // Snapshot
+                    'product_name' => $product->name,
+                    'price'        => $product->price,
                     'quantity'     => $item['quantity'],
                     'subtotal'     => $subtotal,
                 ];
 
-                // ── Kurangi stok produk ──────────────────
                 $product->decrement('stock', $item['quantity']);
             }
 
-            // ── Buat header order ─────────────────────────
             $order = Order::create([
                 'user_id'        => auth()->id(),
                 'invoice_number' => Order::generateInvoiceNumber(),
@@ -97,7 +136,6 @@ class OrderController extends Controller
                 'notes'          => $validated['notes'] ?? null,
             ]);
 
-            // ── Simpan semua item sekaligus ───────────────
             $order->items()->createMany($orderItems);
         });
 
@@ -111,8 +149,57 @@ class OrderController extends Controller
      */
     public function show(Order $order): View
     {
-        // Load relasi items beserta produknya
         $order->load('items.product', 'user');
         return view('orders.show', compact('order'));
+    }
+
+    /**
+     * ── VOID TRANSAKSI ─────────────────────────────────────────────────
+     * Membatalkan transaksi yang sudah paid.
+     * Hanya admin yang bisa melakukan void.
+     *
+     * Yang terjadi saat void:
+     *   1. Status order diubah jadi 'cancelled'
+     *   2. Stok produk dikembalikan sesuai qty di order items
+     *   3. Alasan void disimpan di kolom notes
+     *
+     * Tidak ada penghapusan data — order tetap ada untuk audit trail.
+     */
+    public function void(Request $request, Order $order): RedirectResponse
+    {
+        // Hanya admin yang boleh void
+        abort_unless(auth()->user()->isAdmin(), 403, 'Hanya admin yang dapat membatalkan transaksi.');
+
+        // Transaksi yang sudah dibatalkan tidak bisa di-void lagi
+        if ($order->status === 'cancelled') {
+            return back()->with('error', 'Transaksi ini sudah dibatalkan sebelumnya.');
+        }
+
+        // Validasi alasan void wajib diisi
+        $request->validate([
+            'void_reason' => ['required', 'string', 'min:5', 'max:255'],
+        ], [
+            'void_reason.required' => 'Alasan pembatalan wajib diisi.',
+            'void_reason.min'      => 'Alasan terlalu singkat, minimal 5 karakter.',
+        ]);
+
+        DB::transaction(function () use ($request, $order) {
+            // Kembalikan stok tiap produk
+            foreach ($order->items as $item) {
+                Product::where('id', $item->product_id)
+                       ->increment('stock', $item->quantity);
+            }
+
+            // Update status dan simpan alasan void
+            $order->update([
+                'status' => 'cancelled',
+                'notes'  => '[VOID oleh ' . auth()->user()->name . '] ' . $request->void_reason
+                          . ($order->notes ? ' | Catatan asal: ' . $order->notes : ''),
+            ]);
+        });
+
+        return redirect()
+            ->route('orders.index')
+            ->with('success', "Transaksi {$order->invoice_number} berhasil dibatalkan. Stok produk telah dikembalikan.");
     }
 }

@@ -90,15 +90,29 @@
                         </h3>
                         <p id="cart-summary-text">Klik produk untuk ditambahkan</p>
                     </div>
-                    <button onclick="clearCart()" id="btn-clear"
-                            style="display:none; background:rgba(255,255,255,.1); border:none; border-radius:8px;
-                                   padding:.35rem .65rem; color:rgba(255,255,255,.7); cursor:pointer;
-                                   font-size:.72rem; font-weight:700; font-family:'Poppins',sans-serif;
-                                   transition:var(--transition);"
-                            onmouseover="this.style.background='rgba(255,255,255,.2)'"
-                            onmouseout="this.style.background='rgba(255,255,255,.1)'">
-                        Kosongkan
-                    </button>
+                    <div style="display:flex; align-items:center; gap:.5rem;">
+                        {{-- Shortcut hint button --}}
+                        <button onclick="document.getElementById('shortcut-modal').style.display='flex'"
+                                title="Keyboard Shortcuts (F1)"
+                                style="background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+                                       border-radius:8px; padding:.3rem .55rem; cursor:pointer;
+                                       color:rgba(255,255,255,.5); font-size:.65rem; font-weight:700;
+                                       font-family:'Poppins',sans-serif; letter-spacing:.04em;
+                                       transition:var(--transition);"
+                                onmouseover="this.style.background='rgba(255,255,255,.15)'; this.style.color='#fff'"
+                                onmouseout="this.style.background='rgba(255,255,255,.08)'; this.style.color='rgba(255,255,255,.5)'">
+                            ⌨️ F1
+                        </button>
+                        <button onclick="clearCart()" id="btn-clear"
+                                style="display:none; background:rgba(255,255,255,.1); border:none; border-radius:8px;
+                                       padding:.35rem .65rem; color:rgba(255,255,255,.7); cursor:pointer;
+                                       font-size:.72rem; font-weight:700; font-family:'Poppins',sans-serif;
+                                       transition:var(--transition);"
+                                onmouseover="this.style.background='rgba(255,255,255,.2)'"
+                                onmouseout="this.style.background='rgba(255,255,255,.1)'">
+                            Kosongkan
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -190,7 +204,8 @@ function addToCart(el) {
 
     if (cart[id]) {
         if (cart[id].quantity >= stock) {
-            showToast('Stok tidak mencukupi! Maks ' + stock + ' item.', 'warning');
+            showToast(`Stok "${name}" habis! Maksimal ${stock} item.`, 'error');
+            shakeElement(el);
             return;
         }
         cart[id].quantity++;
@@ -200,6 +215,46 @@ function addToCart(el) {
 
     el.classList.add('selected');
     renderCart();
+
+    // ── Peringatan stok setelah penambahan ──────────────────────────
+    const remaining = stock - cart[id].quantity;
+    if (remaining === 0) {
+        showToast(`⚠️ Stok "${name}" habis terpakai!`, 'error');
+        // Redupkan card produk secara visual
+        el.style.opacity = '.5';
+        el.style.filter  = 'grayscale(.5)';
+    } else if (remaining <= 2) {
+        showToast(`🔴 Sisa stok "${name}": ${remaining} item`, 'error');
+        updateProductBadge(el, remaining, 'critical');
+    } else if (remaining <= 5) {
+        showToast(`⚠️ Stok "${name}" menipis: sisa ${remaining}`, 'warning');
+        updateProductBadge(el, remaining, 'low');
+    }
+}
+
+/* ── Update badge stok di product card secara real-time ─────────────── */
+function updateProductBadge(el, remaining, level) {
+    let badge = el.querySelector('.badge-oos');
+    if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'badge-oos';
+        el.appendChild(badge);
+    }
+    if (level === 'critical') {
+        badge.textContent = `Sisa ${remaining}!`;
+        badge.style.cssText = 'background:rgba(244,63,94,.15); color:var(--danger); font-weight:800;';
+    } else {
+        badge.textContent = `Sisa ${remaining}`;
+        badge.style.cssText = 'background:rgba(245,158,11,.15); color:#b45309; font-weight:800;';
+    }
+}
+
+/* ── Animasi shake saat stok habis ──────────────────────────────────── */
+function shakeElement(el) {
+    el.style.animation = 'none';
+    el.offsetHeight; // reflow
+    el.style.animation = 'shake .35s ease';
+    setTimeout(() => el.style.animation = '', 400);
 }
 
 /* ─── Ubah qty di keranjang ──────────────────────────────────────────── */
@@ -250,9 +305,18 @@ function renderCart() {
         // Build cart item HTML
         let html = '';
         ids.forEach(id => {
-            const item = cart[id];
+            const item      = cart[id];
+            const remaining = item.stock - item.quantity;
+            const isLow     = remaining <= 5 && remaining > 0;
+            const isEmpty   = remaining === 0;
+
+            // Warna border item berdasarkan kondisi stok
+            const borderColor = isEmpty
+                ? 'rgba(244,63,94,.25)'
+                : isLow ? 'rgba(245,158,11,.25)' : 'rgba(0,0,0,.04)';
+
             html += `
-            <div class="cart-item">
+            <div class="cart-item" style="border-color:${borderColor};">
                 <div class="cart-item-info">
                     <div class="cart-item-name">${item.name}</div>
                     <div class="cart-item-price">
@@ -260,12 +324,19 @@ function renderCart() {
                         &nbsp;=&nbsp;
                         <strong>${formatRp(item.price * item.quantity)}</strong>
                     </div>
+                    ${isEmpty
+                        ? `<div style="font-size:.68rem; font-weight:800; color:var(--danger);
+                                       margin-top:2px;">🔴 Stok habis terpakai</div>`
+                        : isLow
+                            ? `<div style="font-size:.68rem; font-weight:700; color:#b45309;
+                                           margin-top:2px;">⚠️ Sisa stok: ${remaining}</div>`
+                            : ''}
                 </div>
                 <div class="cart-qty">
                     <button class="qty-btn" onclick="changeQty('${id}', -1)">−</button>
                     <span class="qty-display">${item.quantity}</span>
                     <button class="qty-btn" onclick="changeQty('${id}', 1)"
-                            ${item.quantity >= item.stock ? 'disabled style="opacity:.4;cursor:not-allowed"' : ''}>+</button>
+                            ${isEmpty ? 'disabled style="opacity:.4;cursor:not-allowed"' : ''}>+</button>
                 </div>
             </div>`;
         });
@@ -341,14 +412,13 @@ function calcChange() {
 }
 
 /* ─── Submit order ke server ─────────────────────────────────────────── */
-function submitOrder() {
+async function submitOrder() {
     const ids   = Object.keys(cart);
     const paid  = parseInt(document.getElementById('amount-paid').value) || 0;
     const notes = document.getElementById('notes').value;
 
     if (ids.length === 0) { showToast('Keranjang masih kosong!', 'warning'); return; }
 
-    // Hitung total aktual dari cart (bukan dari display)
     let total = 0;
     ids.forEach(id => total += cart[id].price * cart[id].quantity);
 
@@ -358,7 +428,70 @@ function submitOrder() {
         return;
     }
 
-    // Isi hidden form
+    // ── AJAX: validasi stok terkini ke server sebelum submit ────────
+    // Mencegah race condition: kasir A & kasir B pesan produk sama
+    const btn = document.getElementById('btn-bayar');
+    btn.disabled  = true;
+    btn.innerHTML = '🔍 Cek stok...';
+
+    try {
+        const payload = ids.map(id => ({
+            product_id: id,
+            quantity:   cart[id].quantity,
+        }));
+
+        const resp = await fetch('{{ route("orders.checkStock") }}', {
+            method:  'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept':       'application/json',
+            },
+            body: JSON.stringify({ items: payload }),
+        });
+
+        const result = await resp.json();
+
+        // Jika ada produk stok tidak cukup, tampilkan error dan batalkan
+        if (!result.ok) {
+            btn.disabled  = false;
+            btn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg> Proses Pembayaran`;
+
+            // Update stok di cart berdasarkan data terbaru dari server
+            result.errors.forEach(err => {
+                showToast(`❌ ${err.name}: stok tersedia hanya ${err.available}, kamu pesan ${err.requested}`, 'error');
+
+                // Update stok di cart & product card
+                if (cart[err.product_id]) {
+                    cart[err.product_id].stock = err.available;
+                    // Kalau qty di cart melebihi stok terbaru, potong
+                    if (cart[err.product_id].quantity > err.available) {
+                        cart[err.product_id].quantity = err.available;
+                    }
+                }
+
+                // Update data-stock di product card
+                const card = document.getElementById('product-' + err.product_id);
+                if (card) {
+                    card.dataset.stock = err.available;
+                    updateProductBadge(card, err.available - (cart[err.product_id]?.quantity || 0), err.available <= 2 ? 'critical' : 'low');
+                }
+            });
+
+            renderCart();
+            return;
+        }
+    } catch (err) {
+        // Kalau AJAX gagal (offline / server error), tetap lanjut submit biasa
+        console.warn('Stock check failed, proceeding anyway:', err);
+    }
+
+    // ── Semua OK, submit form ────────────────────────────────────────
+    btn.innerHTML = '⏳ Memproses...';
+
     document.getElementById('form-amount-paid').value = paid;
     document.getElementById('form-notes').value        = notes;
 
@@ -369,11 +502,6 @@ function submitOrder() {
             <input type="hidden" name="items[${idx}][product_id]" value="${id}">
             <input type="hidden" name="items[${idx}][quantity]"   value="${cart[id].quantity}">`;
     });
-
-    // Disable tombol supaya tidak double-submit
-    const btn = document.getElementById('btn-bayar');
-    btn.disabled     = true;
-    btn.innerHTML    = '⏳ Memproses...';
 
     document.getElementById('order-form').submit();
 }
@@ -419,4 +547,234 @@ function showToast(msg, type = 'info') {
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }
+
+/* ─── KEYBOARD SHORTCUTS ─────────────────────────────────────────────────
+ *
+ *  F1 / ?          → tampilkan daftar shortcut
+ *  /               → fokus ke search produk
+ *  Escape          → clear search / tutup shortcut modal
+ *  Enter           → proses pembayaran (jika cart tidak kosong)
+ *  Backspace       → clear keranjang (jika focus bukan di input)
+ *  0-9 (numpad)    → preset nominal uang (lihat AMOUNT_PRESETS)
+ *  + / =           → qty +1 item terakhir di cart
+ *  - / _           → qty -1 item terakhir di cart
+ *  Delete          → hapus item terakhir di cart
+ *
+ * Semua shortcut DINONAKTIFKAN saat focus ada di dalam input/textarea.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+// Preset nominal tombol angka 1-9 (dalam Rupiah)
+const AMOUNT_PRESETS = {
+    '1': 5000,
+    '2': 10000,
+    '3': 20000,
+    '4': 50000,
+    '5': 100000,
+    '6': 50000,  // duplikat aman
+    '7': 200000,
+    '8': 500000,
+    '9': 1000000,
+};
+
+function isTyping() {
+    const tag = document.activeElement?.tagName?.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || tag === 'select';
+}
+
+function getLastCartId() {
+    const ids = Object.keys(cart);
+    return ids.length ? ids[ids.length - 1] : null;
+}
+
+document.addEventListener('keydown', function(e) {
+    // ── / → fokus search ──────────────────────────────────────────
+    if (e.key === '/' && !isTyping()) {
+        e.preventDefault();
+        const s = document.getElementById('product-search');
+        s.focus(); s.select();
+        return;
+    }
+
+    // ── Escape → clear search atau tutup shortcut modal ───────────
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('shortcut-modal');
+        if (modal && modal.style.display !== 'none') {
+            modal.style.display = 'none';
+            return;
+        }
+        const s = document.getElementById('product-search');
+        if (document.activeElement === s) {
+            s.value = ''; filterProducts(); s.blur();
+        }
+        return;
+    }
+
+    // Shortcut di bawah ini tidak aktif saat sedang mengetik
+    if (isTyping()) return;
+
+    // ── F1 atau ? → tampilkan shortcut cheatsheet ────────────────
+    if (e.key === 'F1' || e.key === '?') {
+        e.preventDefault();
+        document.getElementById('shortcut-modal').style.display = 'flex';
+        return;
+    }
+
+    // ── Enter → submit order ──────────────────────────────────────
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        if (Object.keys(cart).length > 0) {
+            const amountEl = document.getElementById('amount-paid');
+            if (!amountEl.value || parseInt(amountEl.value) === 0) {
+                // Kalau nominal belum diisi, fokus ke field nominal dulu
+                amountEl.focus();
+                showToast('Isi nominal uang diterima dulu, lalu Enter lagi.', 'warning');
+            } else {
+                submitOrder();
+            }
+        } else {
+            showToast('Keranjang masih kosong!', 'warning');
+        }
+        return;
+    }
+
+    // ── Backspace → kosongkan cart ────────────────────────────────
+    if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (Object.keys(cart).length > 0) {
+            clearCart();
+            showToast('Keranjang dikosongkan.', 'info');
+        }
+        return;
+    }
+
+    // ── Delete → hapus item terakhir di cart ─────────────────────
+    if (e.key === 'Delete') {
+        e.preventDefault();
+        const id = getLastCartId();
+        if (id) {
+            const name = cart[id].name;
+            changeQty(id, -cart[id].quantity); // hapus semua qty-nya
+            showToast(`"${name}" dihapus dari keranjang.`, 'info');
+        }
+        return;
+    }
+
+    // ── + / = → tambah qty item terakhir ─────────────────────────
+    if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        const id = getLastCartId();
+        if (id) { changeQty(id, 1); showToast(`+1 ${cart[id]?.name || ''}`, 'success'); }
+        return;
+    }
+
+    // ── - / _ → kurangi qty item terakhir ────────────────────────
+    if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        const id = getLastCartId();
+        if (id) {
+            const name = cart[id].name;
+            changeQty(id, -1);
+            showToast(`-1 ${name}`, 'info');
+        }
+        return;
+    }
+
+    // ── Angka 1-9 → preset nominal uang ──────────────────────────
+    if (AMOUNT_PRESETS[e.key]) {
+        e.preventDefault();
+        // Hitung total dulu dari cart
+        let total = 0;
+        Object.values(cart).forEach(item => total += item.price * item.quantity);
+        if (total === 0) { showToast('Tambahkan produk dulu.', 'warning'); return; }
+
+        const preset = AMOUNT_PRESETS[e.key];
+        // Kalau preset < total, pakai yang lebih besar (uang pas)
+        const amount = preset >= total ? preset : Math.ceil(total / preset) * preset;
+        setAmount(amount);
+        showToast(`Nominal: Rp ${amount.toLocaleString('id-ID')}`, 'success');
+        return;
+    }
+});
+
+/* ─── SHORTCUT CHEATSHEET MODAL ──────────────────────────────────────── */
+(function buildShortcutModal() {
+    const shortcuts = [
+        { key: '/',         desc: 'Fokus ke pencarian produk' },
+        { key: 'Enter',     desc: 'Proses pembayaran' },
+        { key: 'Backspace', desc: 'Kosongkan keranjang' },
+        { key: 'Delete',    desc: 'Hapus item terakhir di keranjang' },
+        { key: '+ / =',     desc: 'Tambah qty item terakhir' },
+        { key: '- / _',     desc: 'Kurangi qty item terakhir' },
+        { key: 'Escape',    desc: 'Tutup pencarian / modal ini' },
+        { key: '1',         desc: 'Nominal Rp 5.000' },
+        { key: '2',         desc: 'Nominal Rp 10.000' },
+        { key: '3',         desc: 'Nominal Rp 20.000' },
+        { key: '4',         desc: 'Nominal Rp 50.000' },
+        { key: '5 / 6',     desc: 'Nominal Rp 100.000' },
+        { key: '7',         desc: 'Nominal Rp 200.000' },
+        { key: '8',         desc: 'Nominal Rp 500.000' },
+        { key: '9',         desc: 'Nominal Rp 1.000.000' },
+        { key: 'F1 / ?',    desc: 'Tampilkan shortcut ini' },
+    ];
+
+    const rows = shortcuts.map(s => `
+        <div style="display:flex; align-items:center; gap:.75rem; padding:.45rem 0;
+                    border-bottom:1px solid rgba(0,0,0,.04);">
+            <kbd style="display:inline-flex; align-items:center; justify-content:center;
+                        background:var(--coffee-50); border:1.5px solid var(--coffee-100);
+                        border-radius:6px; padding:.2rem .55rem; font-size:.75rem;
+                        font-weight:800; color:var(--coffee-700); font-family:'DM Mono',monospace;
+                        min-width:72px; text-align:center; white-space:nowrap;
+                        box-shadow:0 2px 0 var(--coffee-200);">
+                ${s.key}
+            </kbd>
+            <span style="font-size:.83rem; color:var(--coffee-600); font-weight:500;">
+                ${s.desc}
+            </span>
+        </div>`).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'shortcut-modal';
+    modal.style.cssText = `
+        display:none; position:fixed; inset:0; z-index:9999;
+        background:rgba(0,0,0,.5); backdrop-filter:blur(4px);
+        align-items:center; justify-content:center; padding:1rem;`;
+
+    modal.innerHTML = `
+        <div style="background:#fff; border-radius:1rem; padding:1.75rem;
+                    max-width:460px; width:100%; max-height:90vh; overflow-y:auto;
+                    box-shadow:0 24px 60px rgba(0,0,0,.18);
+                    animation:slideUp .25s ease both;">
+            <div style="display:flex; align-items:center; justify-content:space-between;
+                        margin-bottom:1.25rem;">
+                <div>
+                    <h3 style="font-size:1rem; font-weight:800; color:var(--coffee-950);">
+                        ⌨️ Keyboard Shortcuts
+                    </h3>
+                    <p style="font-size:.75rem; color:var(--coffee-400); margin-top:2px;">
+                        Aktif saat tidak sedang mengetik di input
+                    </p>
+                </div>
+                <button onclick="document.getElementById('shortcut-modal').style.display='none'"
+                        style="background:var(--coffee-50); border:1.5px solid var(--coffee-100);
+                               border-radius:8px; padding:.35rem .65rem; cursor:pointer;
+                               font-size:.75rem; font-weight:700; color:var(--coffee-600);
+                               font-family:'Poppins',sans-serif;">
+                    Tutup
+                </button>
+            </div>
+            ${rows}
+            <div style="margin-top:1rem; padding:.65rem .85rem; background:var(--coffee-50);
+                        border-radius:8px; font-size:.75rem; color:var(--coffee-500); font-weight:500;">
+                💡 Tekan <kbd style="background:var(--coffee-100); border-radius:4px; padding:.1rem .4rem;
+                                     font-size:.72rem; font-weight:800;">F1</kbd> atau
+                <kbd style="background:var(--coffee-100); border-radius:4px; padding:.1rem .4rem;
+                             font-size:.72rem; font-weight:800;">?</kbd>
+                kapan saja untuk membuka cheatsheet ini.
+            </div>
+        </div>`;
+
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+    document.body.appendChild(modal);
+})();
 </script>

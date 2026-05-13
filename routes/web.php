@@ -22,14 +22,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Transaksi & Kasir (Bisa diakses Admin & Kasir)
+    // Transaksi & Kasir (Admin & Kasir)
     Route::get('/orders/pos', [OrderController::class, 'create'])->name('orders.create');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::post('/orders/check-stock', [OrderController::class, 'checkStock'])->name('orders.checkStock');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 
     // Akses Khusus Admin
     Route::middleware('role:admin')->group(function () {
+        // ── Void transaksi ──────────────────────────────────────────────
+        Route::patch('/orders/{order}/void', [OrderController::class, 'void'])
+             ->name('orders.void');
+
         Route::resource('categories', CategoryController::class)->except('show');
         Route::resource('products', ProductController::class)->except('show');
         Route::resource('users', UserController::class)->except('show');
