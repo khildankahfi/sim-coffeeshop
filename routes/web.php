@@ -31,7 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Akses Khusus Admin
     Route::middleware('role:admin')->group(function () {
-        // ── Void transaksi ──────────────────────────────────────────────
+        // Void transaksi 
         Route::patch('/orders/{order}/void', [OrderController::class, 'void'])
              ->name('orders.void');
 

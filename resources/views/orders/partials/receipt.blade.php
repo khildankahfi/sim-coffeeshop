@@ -20,7 +20,7 @@
         </div>
         <div style="font-size:.72rem; color:#8b4f1e; font-weight:600;
                     letter-spacing:.1em; text-transform:uppercase; margin-top:.15rem;">
-            Premium Brew
+            Kelompok 3 E
         </div>
 
         {{-- Divider titik --}}

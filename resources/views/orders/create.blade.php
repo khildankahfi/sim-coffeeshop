@@ -2,6 +2,25 @@
     <x-slot name="title">Kasir / POS</x-slot>
     <x-slot name="subtitle">Buat transaksi baru</x-slot>
 
+    {{-- ── TAB SWITCHER (mobile only) ─────────────────────────────────── --}}
+    <div class="pos-tabs">
+        <button class="pos-tab active" id="tab-products" onclick="switchTab('products')">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+            Produk
+        </button>
+        <button class="pos-tab" id="tab-cart" onclick="switchTab('cart')">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+            Keranjang
+            <span class="pos-tab-badge" id="tab-cart-badge" style="display:none;">0</span>
+        </button>
+    </div>
+
     <div class="pos-layout">
 
         {{-- ── PANEL KIRI: Daftar Produk ─────────────────────────────── --}}
@@ -777,4 +796,111 @@ document.addEventListener('keydown', function(e) {
     modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
     document.body.appendChild(modal);
 })();
+
+/* ─── MOBILE TAB SWITCHING ───────────────────────────────────────────── */
+function switchTab(tab) {
+    const productsPanel = document.querySelector('.pos-products');
+    const cartPanel     = document.querySelector('.cart-panel');
+    const tabProducts   = document.getElementById('tab-products');
+    const tabCart       = document.getElementById('tab-cart');
+
+    if (tab === 'products') {
+        productsPanel.style.display = '';
+        cartPanel.style.display     = 'none';
+        tabProducts.classList.add('active');
+        tabCart.classList.remove('active');
+    } else {
+        productsPanel.style.display = 'none';
+        cartPanel.style.display     = '';
+        tabProducts.classList.remove('active');
+        tabCart.classList.add('active');
+    }
+}
+
+// Update badge di tab cart setiap kali renderCart dipanggil
+const _origRenderCart = renderCart;
+renderCart = function() {
+    _origRenderCart();
+    const totalQty = Object.values(cart).reduce((s, i) => s + i.quantity, 0);
+    const badge    = document.getElementById('tab-cart-badge');
+    if (badge) {
+        badge.textContent   = totalQty;
+        badge.style.display = totalQty > 0 ? 'inline-flex' : 'none';
+    }
+};
+
+// Init: di desktop semua tampil, di mobile hanya produk
+function initTabs() {
+    const products = document.querySelector('.pos-products');
+    const cart_    = document.querySelector('.cart-panel');
+    if (window.innerWidth <= 768) {
+        products.style.display = '';
+        cart_.style.display    = 'none';
+        document.getElementById('tab-products').classList.add('active');
+        document.getElementById('tab-cart').classList.remove('active');
+    } else {
+        products.style.display = '';
+        cart_.style.display    = '';
+    }
+}
+window.addEventListener('resize', initTabs);
+initTabs();
 </script>
+
+<style>
+/* ─── POS TAB SWITCHER (mobile only) ────────────────────────────────── */
+.pos-tabs { display: none; }
+
+.pos-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    padding: .65rem 1rem;
+    border: none;
+    border-radius: 9px;
+    font-size: .875rem;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    background: transparent;
+    color: var(--coffee-400);
+    transition: var(--transition);
+}
+.pos-tab.active {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(245,158,11,.3);
+}
+.pos-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--danger);
+    color: #fff;
+    font-size: .65rem;
+    font-weight: 900;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    padding: 0 4px;
+}
+
+@media (max-width: 768px) {
+    .pos-tabs {
+        display: flex;
+        background: #fff;
+        border: 1px solid var(--coffee-100);
+        border-radius: 12px;
+        padding: .35rem;
+        margin-bottom: 1rem;
+        gap: .35rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .pos-layout {
+        grid-template-columns: 1fr !important;
+        height: auto !important;
+    }
+}
+</style>

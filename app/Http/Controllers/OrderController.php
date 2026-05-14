@@ -6,6 +6,7 @@ use App\Http\Requests\StoreOrderRequest;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,17 +20,20 @@ class OrderController extends Controller
      */
     public function index(): View
     {
+        $tz    = config('app.timezone', 'Asia/Jakarta');
         $query = Order::with('user')->latest();
 
         if (auth()->user()->isKasir()) {
             $query->where('user_id', auth()->id());
         }
 
+        // Filter tanggal pakai range WIB agar tidak ada transaksi yang terlewat
         if (request('date')) {
-            $query->whereDate('created_at', request('date'));
+            $dayStart = Carbon::parse(request('date'), $tz)->startOfDay();
+            $dayEnd   = Carbon::parse(request('date'), $tz)->endOfDay();
+            $query->whereBetween('created_at', [$dayStart, $dayEnd]);
         }
 
-        // Filter status
         if (request('status')) {
             $query->where('status', request('status'));
         }

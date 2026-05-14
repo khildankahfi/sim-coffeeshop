@@ -6,33 +6,44 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     /**
      * Tampilkan halaman dashboard dengan statistik ringkasan.
-     * Hanya user yang sudah login (admin & kasir) yang bisa akses.
+     *
+     * Catatan timezone:
+     * Setelah config/app.php diset ke 'Asia/Jakarta', semua Carbon::now()
+     * dan today() otomatis pakai WIB. Kita tetap eksplisit pakai
+     * nowInTimezone() sebagai dokumentasi dan jaga-jaga kalau
+     * config belum diubah.
      */
     public function index()
     {
-        // ── Statistik hari ini ──────────────────────────
-        $today = today();
+        // Pastikan "hari ini" selalu dihitung dalam WIB (UTC+7)
+        // Ini penting agar transaksi jam 00.00-06.59 WIB tidak
+        // dianggap "kemarin" oleh server yang masih UTC
+        $tz    = config('app.timezone', 'Asia/Jakarta');
+        $today = Carbon::now($tz)->startOfDay();
+        $end   = Carbon::now($tz)->endOfDay();
 
-        $todayOrders = Order::whereDate('created_at', $today)
+        // ── Statistik hari ini ──────────────────────────────────────
+        $todayOrders = Order::whereBetween('created_at', [$today, $end])
                             ->where('status', 'paid')
                             ->count();
 
-        $todayRevenue = Order::whereDate('created_at', $today)
+        $todayRevenue = Order::whereBetween('created_at', [$today, $end])
                              ->where('status', 'paid')
                              ->sum('total_amount');
 
-        // ── Statistik keseluruhan ───────────────────────
-        $totalProducts  = Product::count();
+        // ── Statistik keseluruhan ───────────────────────────────────
+        $totalProducts   = Product::count();
         $totalCategories = Category::count();
-        $totalUsers     = User::count();
+        $totalUsers      = User::count();
 
-        // ── Produk stok menipis (< 5) ──────────────────
+        // ── Produk stok menipis (< 5) ───────────────────────────────
         $lowStockProducts = Product::where('stock', '<', 5)
                                    ->where('is_active', true)
                                    ->with('category')
@@ -40,19 +51,23 @@ class DashboardController extends Controller
                                    ->take(5)
                                    ->get();
 
-        // ── 5 Transaksi terbaru ─────────────────────────
+        // ── 5 Transaksi terbaru ─────────────────────────────────────
         $recentOrders = Order::with('user')
                              ->where('status', 'paid')
                              ->latest()
                              ->take(5)
                              ->get();
 
-        // ── Pendapatan 7 hari terakhir (untuk chart) ───
-        $weeklyRevenue = collect(range(6, 0))->map(function ($daysAgo) {
-            $date = today()->subDays($daysAgo);
+        // ── Pendapatan 7 hari terakhir (untuk chart) ────────────────
+        // Gunakan range waktu eksplisit per hari dalam WIB
+        // supaya tidak ada transaksi yang "jatuh" ke hari yang salah
+        $weeklyRevenue = collect(range(6, 0))->map(function ($daysAgo) use ($tz) {
+            $dayStart = Carbon::now($tz)->subDays($daysAgo)->startOfDay();
+            $dayEnd   = Carbon::now($tz)->subDays($daysAgo)->endOfDay();
+
             return [
-                'date'    => $date->format('d M'),
-                'revenue' => Order::whereDate('created_at', $date)
+                'date'    => $dayStart->translatedFormat('d M'), // format: "06 Mei"
+                'revenue' => Order::whereBetween('created_at', [$dayStart, $dayEnd])
                                   ->where('status', 'paid')
                                   ->sum('total_amount'),
             ];

@@ -113,10 +113,10 @@ body {
     left: 0;
     height: 100vh;
     overflow-y: auto;
-    z-index: 100;
+    z-index: 200;
+    /* lebih tinggi dari topbar (50) dan overlay (150) */
     display: flex;
     flex-direction: column;
-    /* Subtle noise texture overlay */
     box-shadow: 4px 0 32px rgba(0, 0, 0, .2);
 }
 
@@ -1424,12 +1424,20 @@ canvas {
 }
 
 /* ─── RESPONSIVE ─────────────────────────────────────────────────────── */
+
+/* Hamburger default: hidden (hanya muncul via media query mobile) */
+.hamburger-btn {
+    display: none;
+}
+
+/* ── 1280px: content grid jadi 1 kolom ─────────────────────────────── */
 @media (max-width: 1280px) {
     .content-grid {
         grid-template-columns: 1fr;
     }
 }
 
+/* ── 1024px: tablet landscape ───────────────────────────────────────── */
 @media (max-width: 1024px) {
     .pos-layout {
         grid-template-columns: 1fr;
@@ -1440,42 +1448,357 @@ canvas {
         max-height: none;
         position: static;
     }
+
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    }
 }
 
+/* ── 768px: tablet portrait & mobile ───────────────────────────────── */
 @media (max-width: 768px) {
     :root {
-        --sidebar-w: 0px;
+        --sidebar-w: 270px;
+        /* sidebar tetap lebar, tapi di-slide out */
+        --topbar-h: 60px;
     }
 
+    /* Sidebar slide-out dari kiri */
     .sidebar {
         transform: translateX(-100%);
         transition: transform .3s var(--ease);
+        z-index: 200;
+        /* konsisten dengan z-index utama */
+        box-shadow: none;
     }
 
     .sidebar.open {
         transform: translateX(0);
+        box-shadow: 8px 0 40px rgba(0, 0, 0, .3);
     }
 
+    /* Main content penuh tanpa margin sidebar */
     .main-content {
         margin-left: 0;
     }
 
+    /* Hamburger button */
+    .hamburger-btn {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 5px;
+        width: 36px;
+        height: 36px;
+        background: var(--coffee-50);
+        border: 1.5px solid var(--coffee-100);
+        border-radius: 10px;
+        cursor: pointer;
+        padding: 8px;
+        flex-shrink: 0;
+        transition: var(--transition);
+    }
+
+    .hamburger-btn span {
+        display: block;
+        width: 100%;
+        height: 2px;
+        background: var(--coffee-700);
+        border-radius: 2px;
+        transition: var(--transition);
+        transform-origin: center;
+    }
+
+    /* Animasi X saat aktif */
+    .hamburger-btn.active span:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+    }
+
+    .hamburger-btn.active span:nth-child(2) {
+        opacity: 0;
+        transform: scaleX(0);
+    }
+
+    .hamburger-btn.active span:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+    }
+
+    /* Stat cards 2 kolom */
     .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: .85rem;
+    }
+
+    .stat-card {
+        padding: 1.1rem;
+    }
+
+    .stat-info .stat-value {
+        font-size: 1.4rem;
+    }
+
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 1.2rem;
+    }
+
+    /* Page content padding lebih kecil */
+    .page-content {
+        padding: 1rem;
+    }
+
+    /* Content grids jadi 1 kolom */
+    .content-grid-equal {
+        grid-template-columns: 1fr;
+    }
+
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Topbar lebih compact */
+    .topbar {
+        padding: 0 1rem;
+        height: var(--topbar-h);
+    }
+
+    .topbar-title {
+        font-size: 1rem;
+    }
+
+    /* Sembunyikan teks "Profil" di topbar, hanya ikon */
+    .hide-mobile {
+        display: none;
+    }
+
+    /* Table: scroll horizontal */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table.data-table {
+        min-width: 520px;
+    }
+
+    table.data-table thead th,
+    table.data-table tbody td {
+        padding: .75rem 1rem;
+    }
+
+    /* Receipt layout jadi 1 kolom */
+    .receipt-layout {
+        grid-template-columns: 1fr !important;
+        max-width: 100%;
+    }
+
+    .receipt-meta {
+        position: static !important;
+    }
+
+    /* Profile edit full width */
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Card header lebih compact */
+    .card-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    /* POS layout mobile */
+    .pos-layout {
+        gap: 1rem;
+    }
+
+    .pos-sticky {
+        position: relative;
+        top: 0;
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: .75rem;
+    }
+
+    .product-card-pos {
+        padding: 1rem .85rem;
+    }
+
+    .product-card-pos .product-emoji {
+        font-size: 2rem;
+    }
+
+    .product-card-pos .product-name {
+        font-size: .78rem;
+    }
+
+    .product-card-pos .product-price {
+        font-size: .85rem;
+    }
+
+    /* Cart panel mobile */
+    .cart-panel {
+        border-radius: var(--radius);
+    }
+
+    .cart-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .cart-items {
+        max-height: 280px;
+    }
+
+    .cart-footer {
+        padding: 1rem 1.25rem;
+    }
+
+    /* Form grid jadi 1 kolom di mobile */
+    [style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Buttons di form stack vertikal */
+    .btn-group-form {
+        flex-direction: column;
+    }
+
+    /* Pagination lebih kecil */
+    .pagination-wrapper a,
+    .pagination-wrapper span[aria-current="page"]>span {
+        min-width: 32px;
+        height: 32px;
+        font-size: .78rem;
+    }
+}
+
+/* ── 480px: mobile kecil ────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    :root {
+        --topbar-h: 56px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: .65rem;
+    }
+
+    .stat-card {
+        padding: .9rem;
+    }
+
+    .stat-info .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+        border-radius: 10px;
+    }
+
+    .stat-info .stat-label {
+        font-size: .6rem;
+    }
+
+    .page-content {
+        padding: .85rem;
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: .6rem;
+    }
+
+    .product-card-pos {
+        padding: .75rem .6rem;
+        border-radius: 10px;
+    }
+
+    .product-card-pos .product-emoji {
+        font-size: 1.7rem;
+        margin-bottom: .4rem;
+    }
+
+    .product-card-pos .product-name {
+        font-size: .7rem;
+    }
+
+    .product-card-pos .product-price {
+        font-size: .78rem;
+    }
+
+    /* Cart items lebih compact */
+    .cart-items {
+        max-height: 220px;
+    }
+
+    .cart-item {
+        padding: .65rem .75rem;
+    }
+
+    /* Sembunyikan kolom tabel yang kurang penting */
+    .hide-sm {
+        display: none !important;
+    }
+
+    /* Topbar: hanya judul singkat */
+    .topbar-title {
+        font-size: .9rem;
+    }
+
+    .topbar-subtitle {
+        display: none;
+    }
+}
+
+/* ── 360px: HP kecil (Android entry-level) ──────────────────────────── */
+@media (max-width: 360px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: .5rem;
+    }
+
+    .products-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 
     .page-content {
-        padding: 1.25rem;
-    }
-
-    .content-grid-equal {
-        grid-template-columns: 1fr;
+        padding: .75rem;
     }
 }
 
-@media (max-width: 480px) {
+/* ── Tablet khusus (768-1024px) ─────────────────────────────────────── */
+@media (min-width: 769px) and (max-width: 1024px) {
+
+    /* POS di tablet: produk kiri, cart kanan tapi lebih kecil */
+    .pos-layout {
+        grid-template-columns: 1fr 320px;
+        height: calc(100vh - var(--topbar-h) - 3rem);
+    }
+
+    .cart-panel {
+        max-height: calc(100vh - var(--topbar-h) - 3rem);
+        position: sticky;
+        top: 0;
+    }
+
     .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ── Hamburger hanya MUNCUL di mobile, tersembunyi di desktop ────────
+   Ditulis sebagai min-width agar tidak override media query mobile    */
+@media (min-width: 769px) {
+    .hamburger-btn {
+        display: none !important;
     }
 }
 

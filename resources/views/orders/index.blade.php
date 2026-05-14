@@ -51,12 +51,12 @@
                     <thead>
                         <tr>
                             <th>Invoice</th>
-                            <th>Kasir</th>
+                            <th class="hide-sm">Kasir</th>
                             <th class="text-right">Total</th>
-                            <th class="text-right">Bayar</th>
-                            <th class="text-right">Kembali</th>
+                            <th class="text-right hide-sm">Bayar</th>
+                            <th class="text-right hide-sm">Kembali</th>
                             <th>Status</th>
-                            <th>Waktu</th>
+                            <th class="hide-sm">Waktu</th>
                             <th style="width:100px; text-align:center;">Aksi</th>
                         </tr>
                     </thead>
@@ -70,16 +70,16 @@
                                     {{ $order->invoice_number }}
                                 </a>
                             </td>
-                            <td style="font-weight:600; color:var(--coffee-800);">
+                            <td class="hide-sm" style="font-weight:600; color:var(--coffee-800);">
                                 {{ $order->user->name }}
                             </td>
                             <td class="text-right fw-bold" style="color:var(--coffee-950);">
                                 Rp {{ number_format($order->total_amount, 0, ',', '.') }}
                             </td>
-                            <td class="text-right" style="color:var(--coffee-600);">
+                            <td class="text-right hide-sm" style="color:var(--coffee-600);">
                                 Rp {{ number_format($order->amount_paid, 0, ',', '.') }}
                             </td>
-                            <td class="text-right" style="color:var(--success); font-weight:600;">
+                            <td class="text-right hide-sm" style="color:var(--success); font-weight:600;">
                                 Rp {{ number_format($order->change_amount, 0, ',', '.') }}
                             </td>
                             <td>
@@ -91,7 +91,7 @@
                                     <span class="badge badge-warning">{{ ucfirst($order->status) }}</span>
                                 @endif
                             </td>
-                            <td style="font-size:.8rem; color:var(--coffee-500);">
+                            <td class="hide-sm" style="font-size:.8rem; color:var(--coffee-500);">
                                 {{ $order->created_at->format('d/m/Y H:i') }}
                             </td>
                             <td style="text-align:center;">

@@ -18,8 +18,8 @@
         <div class="sidebar-brand">
             <div class="brand-icon">☕</div>
             <div>
-                <div class="brand-text">SIM Coffee</div>
-                <div class="brand-sub">Premium Brew</div>
+                <div class="brand-text">SIM CoffeeShop</div>
+                <div class="brand-sub">Kelompok 3 E</div>
             </div>
         </div>
 
@@ -113,13 +113,29 @@
     {{-- ── MAIN CONTENT ──────────────────────────────────────────────────── --}}
     <div class="main-content">
 
+        {{-- Mobile Overlay (klik untuk tutup sidebar) --}}
+        <div id="sidebar-overlay"
+             onclick="closeSidebar()"
+             style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+                    backdrop-filter:blur(2px); z-index:150;"></div>
+
         {{-- Topbar --}}
         <header class="topbar">
-            <div class="topbar-left">
-                <div class="topbar-title">{{ $title ?? 'Dashboard' }}</div>
-                @isset($subtitle)
-                    <div class="topbar-subtitle">{{ $subtitle }}</div>
-                @endisset
+            <div class="d-flex align-center gap-3">
+                {{-- Hamburger — hanya muncul di mobile --}}
+                <button id="hamburger-btn"
+                        onclick="toggleSidebar()"
+                        class="hamburger-btn"
+                        aria-label="Buka menu">
+                    <span></span><span></span><span></span>
+                </button>
+
+                <div class="topbar-left">
+                    <div class="topbar-title">{{ $title ?? 'Dashboard' }}</div>
+                    @isset($subtitle)
+                        <div class="topbar-subtitle">{{ $subtitle }}</div>
+                    @endisset
+                </div>
             </div>
 
             <div class="d-flex align-center gap-3">
@@ -133,7 +149,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                     </svg>
-                    Profil
+                    <span class="hide-mobile">Profil</span>
                 </a>
             </div>
         </header>
@@ -178,5 +194,46 @@
 </div>
 
 @stack('scripts')
+
+<script>
+/* ─── SIDEBAR MOBILE TOGGLE ─────────────────────────────────────────── */
+function toggleSidebar() {
+    const sidebar  = document.querySelector('.sidebar');
+    const overlay  = document.getElementById('sidebar-overlay');
+    const btn      = document.getElementById('hamburger-btn');
+    const isOpen   = sidebar.classList.contains('open');
+
+    if (isOpen) {
+        closeSidebar();
+    } else {
+        sidebar.classList.add('open');
+        overlay.style.display = 'block';
+        btn.classList.add('active');
+        document.body.style.overflow = 'hidden'; // cegah scroll di belakang
+    }
+}
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const btn     = document.getElementById('hamburger-btn');
+    sidebar.classList.remove('open');
+    overlay.style.display = 'none';
+    btn.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Tutup sidebar otomatis saat nav item diklik (mobile UX)
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if (window.innerWidth <= 768) closeSidebar();
+    });
+});
+
+// Tutup sidebar saat resize ke desktop
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) closeSidebar();
+});
+</script>
 </body>
 </html>

@@ -20,8 +20,8 @@
 
         <div class="auth-brand-content">
             <div class="auth-logo">☕</div>
-            <h1 class="auth-brand-name">SIM Coffee</h1>
-            <p class="auth-brand-tagline">Premium Brew</p>
+            <h1 class="auth-brand-name">SIM CoffeeShop</h1>
+            <p class="auth-brand-tagline">Kelompok 3 E</p>
             <p class="auth-brand-desc">
                 Sistem Informasi Manajemen Coffeeshop — kelola transaksi, produk, dan laporan dalam satu platform yang efisien.
             </p>
