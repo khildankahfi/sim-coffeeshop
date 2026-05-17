@@ -83,7 +83,7 @@
     {{-- ── CHART + TOP PRODUK ───────────────────────────────────────────── --}}
     <div class="content-grid mb-6">
 
-        {{-- Chart Pendapatan Harian --}}
+        {{-- Chart Pendapatan --}}
         <div class="card">
             <div class="card-header">
                 <h3>Tren Pendapatan</h3>
@@ -106,20 +106,19 @@
 
         {{-- Produk Terlaris --}}
         <div class="card">
-            <div class="card-header">
-                <h3>Produk Terlaris</h3>
-            </div>
+            <div class="card-header"><h3>Produk Terlaris</h3></div>
 
             @if($topProducts->isEmpty())
                 <div class="empty-state" style="padding:2.5rem;">
                     <div style="font-size:2.5rem;opacity:.25;">🏆</div>
-                    <p style="font-size:.875rem;font-weight:600;color:var(--coffee-500);margin-top:.5rem;">Belum ada data</p>
+                    <p style="font-size:.875rem;font-weight:600;color:var(--coffee-500);margin-top:.5rem;">
+                        Belum ada data
+                    </p>
                 </div>
             @else
                 @foreach($topProducts as $i => $p)
                     <div class="d-flex align-center gap-3"
                          style="padding:.85rem 1.5rem; border-bottom:1px solid rgba(0,0,0,.04);">
-                        {{-- Rank medal --}}
                         <div style="
                             width:30px; height:30px; border-radius:50%; flex-shrink:0;
                             display:flex; align-items:center; justify-content:center;
@@ -180,7 +179,8 @@
                         <tr>
                             <td>
                                 <a href="{{ route('orders.show', $order) }}"
-                                   style="color:var(--amber-500); font-weight:700; font-family:'DM Mono',monospace;">
+                                   style="color:var(--amber-500); font-weight:700;
+                                          font-family:'DM Mono',monospace; font-size:.82rem;">
                                     {{ $order->invoice_number }}
                                 </a>
                             </td>
@@ -203,18 +203,21 @@
 
 </x-app-layout>
 
-@push('scripts')
+{{-- ── CHART SCRIPT (inline — bukan @push agar pasti ter-render) ──────── --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function () {
     const daily = @json($dailyRevenue);
-    if (!daily || !daily.length) return;
+
+    if (!daily || daily.length === 0) return;
 
     const labels  = daily.map(d => {
-        const dt = new Date(d.date);
+        // Format tanggal: "2025-05-17" → "17 Mei"
+        const parts = d.date.split('-');
+        const dt    = new Date(parts[0], parts[1] - 1, parts[2]);
         return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
     });
-    const dataset = daily.map(d => parseFloat(d.revenue));
+    const dataset = daily.map(d => parseFloat(d.revenue) || 0);
 
     const ctx = document.getElementById('dailyChart');
     if (!ctx) return;
@@ -243,26 +246,45 @@
             }]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true,
+            maintainAspectRatio: false,
             animation: { duration: 700, easing: 'easeOutQuart' },
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#1a0d00', titleColor: 'rgba(255,255,255,.55)',
-                    bodyColor: '#fff', bodyFont: { family: 'Poppins', weight: '700', size: 14 },
-                    padding: 12, cornerRadius: 8,
-                    callbacks: { label: (ctx) => ' Rp ' + ctx.parsed.y.toLocaleString('id-ID') }
+                    backgroundColor: '#1a0d00',
+                    titleColor:      'rgba(255,255,255,.55)',
+                    bodyColor:       '#fff',
+                    bodyFont:        { family: 'Poppins', weight: '700', size: 14 },
+                    padding:         12,
+                    cornerRadius:    8,
+                    callbacks: {
+                        label: (ctx) => ' Rp ' + ctx.parsed.y.toLocaleString('id-ID'),
+                    }
                 }
             },
             scales: {
-                x: { grid: { display: false }, border: { display: false },
-                     ticks: { color: '#8b4f1e', font: { family: 'Poppins', size: 11, weight: '600' } } },
-                y: { grid: { color: 'rgba(0,0,0,.05)' }, border: { display: false, dash: [4,4] },
-                     ticks: { color: '#8b4f1e', font: { family: 'Poppins', size: 11 },
-                              callback: (val) => val === 0 ? 'Rp 0' : 'Rp ' + (val >= 1000000 ? (val/1000000).toFixed(1)+'jt' : (val/1000).toFixed(0)+'k') } }
+                x: {
+                    grid:   { display: false },
+                    border: { display: false },
+                    ticks:  { color: '#8b4f1e', font: { family: 'Poppins', size: 11, weight: '600' } }
+                },
+                y: {
+                    grid:   { color: 'rgba(0,0,0,.05)' },
+                    border: { display: false, dash: [4,4] },
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#8b4f1e',
+                        font:  { family: 'Poppins', size: 11 },
+                        callback: (val) => val === 0
+                            ? 'Rp 0'
+                            : 'Rp ' + (val >= 1000000
+                                ? (val/1000000).toFixed(1) + 'jt'
+                                : (val/1000).toFixed(0) + 'k'),
+                    }
+                }
             }
         }
     });
 })();
 </script>
-@endpush

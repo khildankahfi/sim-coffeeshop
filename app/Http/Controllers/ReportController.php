@@ -75,12 +75,12 @@ class ReportController extends Controller
             ->get();
 
         // ── Pendapatan per hari (untuk chart) ───────────────────────
-        // Pakai CONVERT_TZ agar grouping tanggal pakai waktu WIB,
-        // bukan UTC dari database
+        // Pakai DATE_ADD +7 jam (WIB) alih-alih CONVERT_TZ
+        // karena CONVERT_TZ butuh MySQL timezone tables yang sering tidak ter-install
         $dailyRevenue = Order::where('status', 'paid')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw(
-                "DATE(CONVERT_TZ(created_at, '+00:00', '+07:00')) as date,
+                "DATE(DATE_ADD(created_at, INTERVAL 7 HOUR)) as date,
                  SUM(total_amount) as revenue,
                  COUNT(*) as transactions"
             )
