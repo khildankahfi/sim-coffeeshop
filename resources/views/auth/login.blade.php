@@ -7,7 +7,7 @@
             Selamat Datang
         </h2>
         <p style="font-size:.875rem; color:var(--coffee-500); margin-top:.35rem; font-weight:500;">
-            Masuk ke dashboard SIM Coffeeshop
+            Masuk ke dashboard Caffeine
         </p>
     </div>
 

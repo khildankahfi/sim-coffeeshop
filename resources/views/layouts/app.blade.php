@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Dashboard' }} — SIM Coffeeshop</title>
+    <title>{{ $title ?? 'Dashboard' }} — Caffeine</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
@@ -18,8 +18,7 @@
         <div class="sidebar-brand">
             <div class="brand-icon">☕</div>
             <div>
-                <div class="brand-text">SIM CoffeeShop</div>
-                <div class="brand-sub">Kelompok 3 E</div>
+                <div class="brand-text">Caffeine</div>
             </div>
         </div>
 

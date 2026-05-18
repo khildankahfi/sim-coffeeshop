@@ -16,11 +16,7 @@
                 border-bottom:2px dashed #e3bb8a;">
         <div style="font-size:2.25rem; margin-bottom:.4rem; line-height:1;">☕</div>
         <div style="font-size:1.1rem; font-weight:900; color:#1a0d00; letter-spacing:-.03em;">
-            SIM Coffeeshop
-        </div>
-        <div style="font-size:.72rem; color:#8b4f1e; font-weight:600;
-                    letter-spacing:.1em; text-transform:uppercase; margin-top:.15rem;">
-            Kelompok 3 E
+            Caffeine
         </div>
 
         {{-- Divider titik --}}

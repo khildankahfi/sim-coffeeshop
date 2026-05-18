@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Login' }} — SIM Coffeeshop</title>
+    <title>{{ $title ?? 'Login' }} — Caffeine</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="auth-body">
@@ -20,8 +20,8 @@
 
         <div class="auth-brand-content">
             <div class="auth-logo">☕</div>
-            <h1 class="auth-brand-name">SIM CoffeeShop</h1>
-            <p class="auth-brand-tagline">Kelompok 3 E</p>
+            <h1 class="auth-brand-name">Caffeine</h1>
+
             <p class="auth-brand-desc">
                 Sistem Informasi Manajemen Coffeeshop — kelola transaksi, produk, dan laporan dalam satu platform yang efisien.
             </p>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>404 — Halaman Tidak Ditemukan | SIM Coffeeshop</title>
+    <title>404 — Halaman Tidak Ditemukan | Caffeine</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -148,7 +148,7 @@
     </div>
     @endauth
 
-    <div class="brand">☕ SIM Coffeeshop</div>
+    <div class="brand">☕ Caffeine</div>
 </div>
 </body>
 </html>

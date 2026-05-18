@@ -1,4 +1,4 @@
-# ☕ SIM Coffeeshop
+# ☕ CAFFEINE
 
 Sistem Informasi Manajemen Coffeeshop berbasis web — dibangun dengan Laravel 11, Vite, dan vanilla CSS tanpa framework UI eksternal.
 
